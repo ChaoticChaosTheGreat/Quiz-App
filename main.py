@@ -205,8 +205,20 @@ def user(username):
   while command != "logout":
     command=input(">>> ").lower()
     if command == "4":
+      for quiz in db[f'{username}_myquizes']:
+        bg = db.prefix[f'quiz_myresponse_{quiz}']
+        if db[f'quiz_response_{quiz}'] == "True":
+          for bges in bg:
+            del db[bges]
+        for i in range(1,(int(db[quiz]+1))):
+          del db[f'quiz_{quiz}_question{i}']
+          del db[f'quiz_{quiz}_question{i}_answer']
+          del db[f'quiz_views_{quiz}']
+          del db["quiz_"+quiz]
+          del db[f'quiz_{quiz}_creator']
+          del db[f'quiz_response_{quiz}']
       delete(username)
-      quit()
+      quit("Your account was deleted")
     elif command == "help":
       print('''Commands:
       1. Take a quiz
@@ -249,7 +261,7 @@ def user(username):
       db[f'quiz_views_{name}'] = 0
       db[f'quiz_{name}_creator'] = username
       db["quiz_"+name] = question_number
-      db[f'{username}_myquizes'].append(name)
+      db[f'username_{username}_myquizes'].append(name)
       print(f"Your quiz has been published in the name of {name}")
     
 def moderator(username):
@@ -273,7 +285,7 @@ def moderator(username):
       selfer=input('''Do you want to delete your self y/n or yes/no:\n''').lower()
       if selfer in ['yes','y']:
         
-        for quiz in db[f'{username}_myquizes']:
+        for quiz in db[f'username_{username}_myquizes']:
           bg = db.prefix[f'quiz_myresponse_{quiz}']
         if db[f'quiz_response_{quiz}'] == "True":
           for bges in bg:
@@ -289,8 +301,8 @@ def moderator(username):
         break
       else:
         user_delete=input('''Type in the username of  the person who you want to delete:\n''').lower()
-        if  db[f"{user_delete}_position"] not in ['admin','moderator']:
-          for quiz in db[f'{user_delete}_myquizes']:
+        if  db[f"username_{user_delete}_position"] not in ['admin','moderator']:
+          for quiz in db[f'username_{user_delete}_myquizes']:
             bg = db.prefix[f'quiz_myresponse_{quiz}']
           if db[f'quiz_response_{quiz}'] == "True":
             for bges in bg:
@@ -345,7 +357,7 @@ def moderator(username):
       db[f'quiz_views_{name}'] = 0
       db[f'quiz_{name}_creator'] = username
       db["quiz_"+name] = question_number
-      db[f'{username}_myquizes'].append(name)
+      db[f'username_{username}_myquizes'].append(name)
       print(f"Your quiz has been published in the name of {name}")
     elif command == '3':
       quiz_name = input("What is the name of the quiz that you want view responses for?\n")
@@ -387,7 +399,7 @@ def admin(username):
       x=reader.read()
     if command == "1":
       user_delete=input('''Type in the username of  the person who you want to delete:\n''').lower()
-      if  db[f"{user_delete}_position"] not in ['admin','moderator']:
+      if  db[f"username_{user_delete}_position"] not in ['admin','moderator']:
         for quiz in db[f'{user_delete}_myquizes']:
           bg = db.prefix[f'quiz_myresponse_{quiz}']
         if db[f'quiz_response_{quiz}'] == "True":
@@ -420,14 +432,14 @@ def admin(username):
       person=input("Whose position do you want to upgrade:\n").lower()
       y=input("Do you still want to do this Y/n or Yes/no").lower()
       if y in ["y","yes"]:
-        db[f"{person}_position"] = "moderator"
+        db[f"username_{person}_position"] = "moderator"
       else:
         print("Thanks for thinking this through :)")
     elif command == '3':
       print(x)
       person=input("Whose position do you want to downgrade:\n").lower()
-      if db[f"{person}_position"] != 'admin':
-        db[f'{person}_position']="user"
+      if db[f"username_{person}_position"] != 'admin':
+        db[f'username_{person}_position']="user"
       else:
         print("Don't downgrade a admin!")
     elif command == '4':
@@ -460,7 +472,7 @@ def admin(username):
         db[f'quiz_{name}_question{i}_answer'] = answer
       db[f'quiz_views_{name}'] = 0
       db[f'quiz_{name}_creator'] = username
-      db[username+"_myquizes"].append(name)
+      db["username_"+username+"_myquizes"].append(name)
       db["quiz_"+name] = question_number
       print(f"Your quiz has been published in the name of {name}")
     elif command == '5':
@@ -490,16 +502,16 @@ def admin(username):
     elif command == '8':
       livequiz(username)
     elif command == '9':
-      # d = db[username]
-      # c = db[username+'_position']
-      # g = db[username+"_myquizes"]
+      d = db[username]
+      c = db[username+'_position']
+      g = db[username+"_myquizes"]
       if input("Are you sure?  Y/N: ").lower() == 'y':
         keys = db.prefix('')
         for key in keys:
           del db[key]
-        # db[username] = d
-        # db[username+'_position'] = c
-        # db[f'{username}_myquizes'] = g
+        db[username] = d
+        db[username+'_position'] = c
+        db[f'{username}_myquizes'] = g
       else:
         print("Good Job that you thought this through.")
 def login(username):
@@ -507,9 +519,9 @@ def login(username):
   os.system('clear')
   if password == db["username_"+username]:
       print(f'Welcome {username}' )
-      if  db[f"{username}_position"] == 'moderator': 
+      if  db[f"username_{username}_position"] == 'moderator': 
         moderator(username)
-      elif db[f"{username}_position"] == 'admin':
+      elif db[f"username_{username}_position"] == 'admin':
         admin(username)
       else: 
         print("hi")
@@ -525,24 +537,19 @@ def create():
      with open('users.txt','a') as filer:
        filer.write(f'{username}\n')
      db["username_"+username]=password
-     db[f"{username}_position"]='user'
-     db[f'{username}_myquizes'] = []
+     db[f"username_{username}_position"]='admin'
+     db[f'username_{username}_myquizes'] = []
      print(f"Hi there {username}")
      login(username)
   else:
     print("Sorry someone has took that username")
     create()
 def delete(username):
-  
-  password=input("What is your password: ")
-  if password == db[username]:
-    delete_txt_file(username)
-    del db[username]
-    del db[f'{username}_position']
-    for quiz in db[f"{username}_myquizes"]
-    del db[f"{username}_myquizes"]
-    print("Succesfully deleted your account")
-delete("admin")
+  delete_txt_file(username)
+  del db["username_"+username]
+  del db[f'username_{username}_position']
+  del db[f"username_{username}_myquizes"]
+  print("Succesfully deleted your account")
 keys = db.prefix("quiz_views_")
 lister={}
 for key in keys:
