@@ -363,9 +363,9 @@ def moderator(username):
           del db[f'quiz_{quiz_name}_question{i}']
           del db[f'quiz_{quiz_name}_question{i}_answer']
           del db[f'quiz_views_{quiz_name}']
-          del db[quiz_name]
-          del db[f'{quiz_name}_creator']
-          del db[f'response_{quiz_name}']
+          del db["quiz_"+quiz_name]
+          del db[f'quiz_{quiz_name}_creator']
+          del db[f'quiz_response_{quiz_name}']
     elif command == '5':
       search(username)
     elif command == '6':
