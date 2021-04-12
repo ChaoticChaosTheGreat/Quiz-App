@@ -150,31 +150,31 @@ def search(username):
   num_wrong = 0
   x = ''
   while True:
-    search_query = "quiz_" + input("Which quiz do you wanna take: \n")
-    if (f'{search_query}_question1') in db.prefix(""):
+    search_query = input("Which quiz do you wanna take: \n")
+    if (f'quiz_{search_query}_question1') in db.prefix(""):
       print("Well, I guess we found your quiz...")
       input("Press enter to conitnue...")
-      print(f"This quiz was created by "+db[f'{search_query}_creator'])
-      for i in range(1,(int(db[search_query]+1))):
-        question = input(db[f'{search_query}_question{i}']+': ')
-        if question == db[f'{search_query}_question{i}_answer']:
+      print(f"This quiz was created by "+db[f'quiz_{search_query}_creator'])
+      for i in range(1,(int(db["quiz_"+search_query]+1))):
+        question = input(db[f'quiz_{search_query}_question{i}']+': ')
+        if question == db[f'quiz_{search_query}_question{i}_answer']:
           print('Correct!')
           num_correct+=1
         else:
           print('Wrong!')
-          print('The correct answer was: \n '+ db[f'{search_query}_question{i}_answer'])
+          print('The correct answer was: \n '+ db[f'quiz_{search_query}_question{i}_answer'])
           num_wrong+=1
-        s = db[search_query+'_question'+str(i)]
+        s = db["quiz_"+search_query+'_question'+str(i)]
         x+=f'\n'+s+': '+question
       break
     else:
       continue
   print(f"Well here's how you did... \n You got {num_correct}/{num_correct+num_wrong}")
-  num = db[f'views_{search_query}']
+  num = db[f'quiz_views_{search_query}']
   num+=1
-  db[f'views_{search_query}'] = num
-  if db[f'response_{search_query}'] == 'True':
-    db[f'myresponse_{search_query}_{username}'] = f'''
+  db[f'quiz_views_{search_query}'] = num
+  if db[f'quiz_response_{search_query}'] == 'True':
+    db[f'quiz_myresponse_{search_query}_{username}'] = f'''
     Username: {username}
     {x}
     Score: {num_correct}/{num_correct+num_wrong}'''
@@ -285,17 +285,24 @@ def moderator(username):
           del db["quiz_"+quiz]
           del db[f'quiz_{quiz}_creator']
           del db[f'quiz_response_{quiz}']
-          del db[f'quiz_{username}_myquizes']
         delete(username)
         break
       else:
         user_delete=input('''Type in the username of  the person who you want to delete:\n''').lower()
         if  db[f"{user_delete}_position"] not in ['admin','moderator']:
-          del db[user_delete]
-          del db[f'{username}_position']
-          del db[f'{username}_myquizes']
-          delete_txt_file(username)
-          print("Succesfully deleted")
+          for quiz in db[f'{username}_myquizes']:
+            bg = db.prefix[f'quiz_myresponse_{quiz}']
+          if db[f'quiz_response_{quiz}'] == "True":
+            for bges in bg:
+              del db[bges]
+          for i in range(1,(int(db[quiz]+1))):
+            del db[f'quiz_{quiz}_question{i}']
+            del db[f'quiz_{quiz}_question{i}_answer']
+            del db[f'quiz_views_{quiz}']
+            del db["quiz_"+quiz]
+            del db[f'quiz_{quiz}_creator']
+            del db[f'quiz_response_{quiz}']
+          delete(username)
         else:
           print('You can\'t delete a admin or moderator')
     elif command == "help":
@@ -323,10 +330,10 @@ def moderator(username):
       while True:
         r = input("Do you want to record responses for this quiz Yes/No?").lower()
         if r == 'yes':
-          db[f'response_{name}'] = 'True'
+          db[f'quiz_response_{name}'] = 'True'
           break
         elif r == 'no':
-          db[f'response_{name}'] = 'False'
+          db[f'quiz_response_{name}'] = 'False'
           break
         else:
           continue
@@ -338,7 +345,7 @@ def moderator(username):
       db[f'quiz_views_{name}'] = 0
       db[f'quiz_{name}_creator'] = username
       db["quiz_"+name] = question_number
-      db[f'quiz_{username}_myquizes'].append(name)
+      db[f'{username}_myquizes'].append(name)
       print(f"Your quiz has been published in the name of {name}")
     elif command == '3':
       quiz_name = input("What is the name of the quiz that you want view responses for?\n")
@@ -432,10 +439,10 @@ def admin(username):
       while True:
         r = input("Do you want to record responses for this quiz Yes/No?").lower()
         if r == 'yes':
-          db[f'response_{name}'] = 'True'
+          db[f'quiz_response_{name}'] = 'True'
           break
         elif r == 'no':
-          db[f'response_{name}'] = 'False'
+          db[f'quiz_response_{name}'] = 'False'
           break
         else:
           continue
@@ -447,7 +454,7 @@ def admin(username):
       db[f'quiz_views_{name}'] = 0
       db[f'quiz_{name}_creator'] = username
       db[username+"_myquizes"].append(name)
-      db["quiz_"name] = question_number
+      db["quiz_"+name] = question_number
       print(f"Your quiz has been published in the name of {name}")
     elif command == '5':
       search(username)
