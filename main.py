@@ -442,37 +442,37 @@ def admin(username):
       for i in range(1,(question_number+1)):
         question = input(f"What is question {i}: \n")
         answer = input(f'And the answer: \n')
-        db[f'{name}_question{i}'] = question
-        db[f'{name}_question{i}_answer'] = answer
-      db[f'views_{name}'] = 0
-      db[f'{name}_creator'] = username
+        db[f'quiz_{name}_question{i}'] = question
+        db[f'quiz_{name}_question{i}_answer'] = answer
+      db[f'quiz_views_{name}'] = 0
+      db[f'quiz_{name}_creator'] = username
       db[username+"_myquizes"].append(name)
-      db[name] = question_number
+      db["quiz_"name] = question_number
       print(f"Your quiz has been published in the name of {name}")
     elif command == '5':
       search(username)
     elif command == '6':
       quiz_name = input("What is the name of the quiz that you want view responses for?\n")
-      if db['response_'+quiz_name] == 'True':
+      if db['quiz_response_'+quiz_name] == 'True':
         print("All Responses")
-        b = db.prefix(f'myresponse_{quiz_name}')
+        b = db.prefix(f'quiz_myresponse_{quiz_name}')
         for something in b:
           f = db[something]
           print(f)
           print("________________________")
     elif command == '7':
       quiz_name = input("What quiz do you want to delete: ")
-      bg = db.prefix(f'myresponse_{quiz_name}')
-      if db[f'response_{quiz_name}'] == "True":
+      bg = db.prefix(f'quiz_myresponse_{quiz_name}')
+      if db[f'quiz_response_{quiz_name}'] == "True":
         for bges in bg:
           del db[bges]
       for i in range(1,(int(db[quiz_name]+1))):
-        del db[f'{quiz_name}_question{i}']
-        del db[f'{quiz_name}_question{i}_answer']
-      del db[f'views_{quiz_name}']
-      del db[quiz_name]
-      del db[f'{quiz_name}_creator']
-      del db[f'response_{quiz_name}']
+        del db[f'quiz_{quiz_name}_question{i}']
+        del db[f'quiz_{quiz_name}_question{i}_answer']
+      del db[f'quiz_views_{quiz_name}']
+      del db["quiz_"+quiz_name]
+      del db[f'quiz_{quiz_name}_creator']
+      del db[f'quiz_response_{quiz_name}']
     elif command == '8':
       livequiz(username)
     elif command == '9':
@@ -529,7 +529,7 @@ def delete(username):
     del db[f"{username}_myquizes"]
     print("Succesfully deleted your account")
 delete("admin")
-keys = db.prefix("views_")
+keys = db.prefix("quiz_views_")
 lister={}
 for key in keys:
   val = db[key]
@@ -538,8 +538,8 @@ print("The trending quizes are:")
 for i in range(9):
   try:
     z = max(lister,key = lister.get)
-    g = z.replace('views_','')
-    z.replace("views_","")
+    g = z.replace('quiz_views_','')
+    z.replace("quiz_views_","")
     print(f'{g}: {lister[z]}')
     del lister[z]
   except:
