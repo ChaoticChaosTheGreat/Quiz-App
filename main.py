@@ -290,7 +290,7 @@ def moderator(username):
       else:
         user_delete=input('''Type in the username of  the person who you want to delete:\n''').lower()
         if  db[f"{user_delete}_position"] not in ['admin','moderator']:
-          for quiz in db[f'{username}_myquizes']:
+          for quiz in db[f'{user_delete}_myquizes']:
             bg = db.prefix[f'quiz_myresponse_{quiz}']
           if db[f'quiz_response_{quiz}'] == "True":
             for bges in bg:
@@ -386,14 +386,21 @@ def admin(username):
     with open ('users.txt','r') as reader:
       x=reader.read()
     if command == "1":
-      print(x)
-      print("This list of all people is inaccurate and some users might not exist or be on this list")
       user_delete=input('''Type in the username of  the person who you want to delete:\n''').lower()
-      if  db[f"{user_delete}_position"] !='admin':
-        del db[user_delete]
-        del db[f'{username}_position']
-        delete_txt_file(username)
-        print("Succesfully deleted")
+      if  db[f"{user_delete}_position"] not in ['admin','moderator']:
+        for quiz in db[f'{user_delete}_myquizes']:
+          bg = db.prefix[f'quiz_myresponse_{quiz}']
+        if db[f'quiz_response_{quiz}'] == "True":
+          for bges in bg:
+            del db[bges]
+        for i in range(1,(int(db[quiz]+1))):
+          del db[f'quiz_{quiz}_question{i}']
+          del db[f'quiz_{quiz}_question{i}_answer']
+          del db[f'quiz_views_{quiz}']
+          del db["quiz_"+quiz]
+          del db[f'quiz_{quiz}_creator']
+          del db[f'quiz_response_{quiz}']
+        delete(username)
       else:
         print('You can\'t delete a moderator or admin')
     elif command == "help":
