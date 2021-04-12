@@ -1,5 +1,10 @@
-from replit import db
+# from replit import db
+from replit.database import Database
 import os,random,time
+
+my_secret = os.environ['db_url']
+db = Database(my_secret)
+# replit.db__url = my_secret
 def livequiz(username):
   x=''
   while x != 'quit':
@@ -10,7 +15,7 @@ def livequiz(username):
     if choice == '1':
       x = 'quit'
       num = ['1','2','3','4','5','6','7','8','9','0']
-      letters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+      letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
       code = random.choice(num)+random.choice(letters)+random.choice(num)+random.choice(letters)+random.choice(num)+random.choice(letters)
       print("Ok now we have to create the questions...")
       try:
@@ -145,8 +150,8 @@ def search(username):
   num_wrong = 0
   x = ''
   while True:
-    search_query = input("Which quiz do you wanna take: \n")
-    if (f'{search_query}_question1') in db.keys():
+    search_query = "quiz_" + input("Which quiz do you wanna take: \n")
+    if (f'{search_query}_question1') in db.prefix(""):
       print("Well, I guess we found your quiz...")
       input("Press enter to conitnue...")
       print(f"This quiz was created by "+db[f'{search_query}_creator'])
@@ -191,23 +196,72 @@ def delete_txt_file(words):
 
 def user(username):
   print("Type help for a list of commands")
+  print('''Commands:
+      1. Take a quiz
+      2. Take or create a live quiz
+      3. Delete your own account''')
+  print('Type in the number of the command to use it...')
   command="none"
   while command != "logout":
     command=input(">>> ").lower()
-    if command == "3":
+    if command == "4":
       delete(username)
       quit()
     elif command == "help":
       print('''Commands:
       1. Take a quiz
-      2. Take or create a live quiz
-      3. Delete your own account''')
+      2. Create a quiz
+      3. Take or create a live quiz
+      4. Delete your own account''')
     elif command == '1':
       search(username)
-    elif command == '2':
+    elif command == '3':
       livequiz(username)
+    elif command == "2":
+      x=True
+      while x != False:
+        name=input("What is the name of your quiz: \n")
+        if name not in db.prefix("quiz_"):
+          x = False
+        else:
+          print("Hmmmm... let's pick a different name...")
+      while True:
+        try: 
+          question_number = int(input("How many questions are in your quiz?"))
+        except:
+          print("Only number please!")
+          continue
+      while True:
+        r = input("Do you want to record responses for this quiz Yes/No?").lower()
+        if r == 'yes':
+          db[f'quiz_response_{name}'] = 'True'
+          break
+        elif r == 'no':
+          db[f'quiz_response_{name}'] = 'False'
+          break
+        else:
+          continue
+      for i in range(1,(question_number+1)):
+        question = input(f"What is question {i}: \n")
+        answer = input(f'And the answer: \n')
+        db[f'quiz_{name}_question{i}'] = question
+        db[f'quiz_{name}_question{i}_answer'] = answer
+      db[f'quiz_views_{name}'] = 0
+      db[f'quiz_{name}_creator'] = username
+      db["quiz_"+name] = question_number
+      db[f'{username}_myquizes'].append(name)
+      print(f"Your quiz has been published in the name of {name}")
+    
 def moderator(username):
   print("Type help for a list of commands")
+  print('''Commands:
+      1. Delete a user or yourself
+      2. Create a quiz
+      3. Delete a quiz that you own
+      4. View all repsonses for a quiz
+      5. Take a quiz...
+      6. Take or create a live quiz''')
+  print("TYpe in the number of the command to use it...")
   command="none"
   with open ('users.txt','r') as reader:
      x=reader.read()
@@ -220,18 +274,18 @@ def moderator(username):
       if selfer in ['yes','y']:
         
         for quiz in db[f'{username}_myquizes']:
-          bg = db.prefix[f'myresponse_{quiz}']
-        if db[f'response_{quiz}'] == "True":
+          bg = db.prefix[f'quiz_myresponse_{quiz}']
+        if db[f'quiz_response_{quiz}'] == "True":
           for bges in bg:
             del db[bges]
         for i in range(1,(int(db[quiz]+1))):
-          del db[f'{quiz}_question{i}']
-          del db[f'{quiz}_question{i}_answer']
-          del db[f'views_{quiz}']
-          del db[quiz]
-          del db[f'{quiz}_creator']
-          del db[f'response_{quiz}']
-          del db[f'{username}_myquizes']
+          del db[f'quiz_{quiz}_question{i}']
+          del db[f'quiz_{quiz}_question{i}_answer']
+          del db[f'quiz_views_{quiz}']
+          del db["quiz_"+quiz]
+          del db[f'quiz_{quiz}_creator']
+          del db[f'quiz_response_{quiz}']
+          del db[f'quiz_{username}_myquizes']
         delete(username)
         break
       else:
@@ -249,7 +303,9 @@ def moderator(username):
       1. Delete a user or yourself
       2. Create a quiz
       3. Delete a quiz that you own
-      4. Take or create a live quiz''')
+      4. View all repsonses for a quiz
+      5. Take a quiz...
+      6. Take or create a live quiz''')
     elif command == '2':
       x=True
       while x != False:
@@ -277,37 +333,42 @@ def moderator(username):
       for i in range(1,(question_number+1)):
         question = input(f"What is question {i}: \n")
         answer = input(f'And the answer: \n')
-        db[f'{name}_question{i}'] = question
-        db[f'{name}_question{i}_answer'] = answer
-      db[f'views_{name}'] = 0
-      db[f'{name}_creator'] = username
-      db[name] = question_number
-      db[f'{username}_myquizes'].append(name)
+        db[f'quiz_{name}_question{i}'] = question
+        db[f'quiz_{name}_question{i}_answer'] = answer
+      db[f'quiz_views_{name}'] = 0
+      db[f'quiz_{name}_creator'] = username
+      db["quiz_"+name] = question_number
+      db[f'quiz_{username}_myquizes'].append(name)
       print(f"Your quiz has been published in the name of {name}")
     elif command == '3':
       quiz_name = input("What is the name of the quiz that you want view responses for?\n")
-      if db['response_'+quiz_name] == 'True':
-        print("All Responses")
-        b = db.prefix(f'myresponse_{quiz_name}')
-        for something in b:
-          f = db[something]
-          print(f)
-          print("________________________")
+      if db[f'quiz_{quiz_name}_creator'] == username:
+        if db['quiz_response_'+quiz_name] == 'True':
+          print("All Responses")
+          b = db.prefix(f'quiz_myresponse_{quiz_name}')
+          for something in b:
+            f = db[something]
+            print(f)
+            print("________________________")
+      else:
+        print("That's not your quiz!")
     elif command == '4':
       quiz_name = input("What quiz do you want to delete: ")
-      if db[f'{quiz_name}_creator'] == username:
-        bg = db.prefix[f'myresponse_{quiz_name}']
-        if db[f'response_{quiz_name}'] == "True":
+      if db[f'quiz_{quiz_name}_creator'] == username:
+        bg = db.prefix[f'quiz_myresponse_{quiz_name}']
+        if db[f'quiz_response_{quiz_name}'] == "True":
           for bges in bg:
             del db[bges]
         for i in range(1,(int(db[quiz_name]+1))):
-          del db[f'{quiz_name}_question{i}']
-          del db[f'{quiz_name}_question{i}_answer']
-          del db[f'views_{quiz_name}']
+          del db[f'quiz_{quiz_name}_question{i}']
+          del db[f'quiz_{quiz_name}_question{i}_answer']
+          del db[f'quiz_views_{quiz_name}']
           del db[quiz_name]
           del db[f'{quiz_name}_creator']
           del db[f'response_{quiz_name}']
     elif command == '5':
+      search(username)
+    elif command == '6':
       livequiz(username)
 def admin(username):
   print("Type help for a list of commands")
@@ -385,6 +446,7 @@ def admin(username):
         db[f'{name}_question{i}_answer'] = answer
       db[f'views_{name}'] = 0
       db[f'{name}_creator'] = username
+      db[username+"_myquizes"].append(name)
       db[name] = question_number
       print(f"Your quiz has been published in the name of {name}")
     elif command == '5':
@@ -414,20 +476,22 @@ def admin(username):
     elif command == '8':
       livequiz(username)
     elif command == '9':
-      d = db[username]
-      c = db[username+'_position']
+      # d = db[username]
+      # c = db[username+'_position']
+      # g = db[username+"_myquizes"]
       if input("Are you sure?  Y/N: ").lower() == 'y':
         keys = db.prefix('')
         for key in keys:
           del db[key]
-        db[username] = d
-        db[username+'_position'] = c
+        # db[username] = d
+        # db[username+'_position'] = c
+        # db[f'{username}_myquizes'] = g
       else:
         print("Good Job that you thought this through.")
 def login(username):
   password=input("Password: ")
   os.system('clear')
-  if password == db[username]:
+  if password == db["username_"+username]:
       print(f'Welcome {username}' )
       if  db[f"{username}_position"] == 'moderator': 
         moderator(username)
@@ -436,16 +500,17 @@ def login(username):
       else: 
         print("hi")
         user(username)
+  else:
+    print("Wrong password/username!")
   
   return username
 def create():
   username=input("What is your username: ").lower()
   password=input("What is your password: ")
   if username not in db.keys():
-     
      with open('users.txt','a') as filer:
        filer.write(f'{username}\n')
-     db[username]=password
+     db["username_"+username]=password
      db[f"{username}_position"]='user'
      db[f'{username}_myquizes'] = []
      print(f"Hi there {username}")
@@ -460,7 +525,10 @@ def delete(username):
     delete_txt_file(username)
     del db[username]
     del db[f'{username}_position']
+    for quiz in db[f"{username}_myquizes"]
+    del db[f"{username}_myquizes"]
     print("Succesfully deleted your account")
+delete("admin")
 keys = db.prefix("views_")
 lister={}
 for key in keys:
@@ -482,5 +550,3 @@ if choice in ["1","login"]:
   login(username)
 elif choice in ["2","create"]:
   create()
-else:
-  print("That answer is invalid")
