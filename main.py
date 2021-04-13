@@ -1,9 +1,9 @@
 # from replit import db
 from replit.database import Database
 import os,random,time
-
-my_secret = os.environ['db_url']
-db = Database(my_secret)
+from dotenv import load_dotenv
+load_dotenv()
+db = Database("")
 # replit.db__url = my_secret
 def livequiz(username):
   x=''
@@ -116,15 +116,15 @@ def livequiz(username):
           round(okay)
           if answer == db[f'{code}_question{i}_answer']:
             print("Correct!")
-            if okay <= 1:
+            if okay <= 3:
               points+=1000
-            elif okay <= 2:
-              points +=900
-            elif okay <= 3:
-              points+=800
-            elif okay <= 4:
-              points+=700
             elif okay <= 5:
+              points +=900
+            elif okay <= 7:
+              points+=800
+            elif okay <= 9:
+              points+=700
+            elif okay <= 11:
               points+=600
             else:
               points+=500
@@ -198,14 +198,15 @@ def user(username):
   print("Type help for a list of commands")
   print('''Commands:
       1. Take a quiz
-      2. Take or create a live quiz
-      3. Delete your own account''')
+      2. Create a quiz
+      3. Take or create a live quiz
+      4. Delete your own account''')
   print('Type in the number of the command to use it...')
   command="none"
   while command != "logout":
     command=input(">>> ").lower()
     if command == "4":
-      for quiz in db[f'{username}_myquizes']:
+      for quiz in db[f'username_{username}_myquizes']:
         bg = db.prefix[f'quiz_myresponse_{quiz}']
         if db[f'quiz_response_{quiz}'] == "True":
           for bges in bg:
@@ -502,9 +503,9 @@ def admin(username):
     elif command == '8':
       livequiz(username)
     elif command == '9':
-      d = db[username]
-      c = db[username+'_position']
-      g = db[username+"_myquizes"]
+      d = db["username_"+username]
+      c = db["username_"+username+'_position']
+      g = db["username_"+username+"_myquizes"]
       if input("Are you sure?  Y/N: ").lower() == 'y':
         keys = db.prefix('')
         for key in keys:
@@ -537,7 +538,7 @@ def create():
      with open('users.txt','a') as filer:
        filer.write(f'{username}\n')
      db["username_"+username]=password
-     db[f"username_{username}_position"]='admin'
+     db[f"username_{username}_position"]='user'
      db[f'username_{username}_myquizes'] = []
      print(f"Hi there {username}")
      login(username)
