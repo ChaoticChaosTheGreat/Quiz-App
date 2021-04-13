@@ -47,7 +47,7 @@ def livequiz(username):
       timelimit = input("What is the time limit for the live quiz: ")
       db[f'{code}_time'] = timelimit
       db[code] = 'open'
-      print('Your code is '+code+' share with whoever you want to the quiz with...')
+      print('Your code is \u001b[7m'+code+'\u001b[0m share with whoever you want to the quiz with...')
       input("Press enter the start the quiz\nOnce you start no one else will be able to join!\n")
       db[code] = 'started'
       print("Starting quiz...")
